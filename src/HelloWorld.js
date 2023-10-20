@@ -1,23 +1,54 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState} from 'react'
+import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function HelloWorld() {
     const [records, setRecords]= useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalRecords, getTotalRecord] = useState(0);
-    const recordsInPage = 5;
     const [firstNumberInPage,setFirstNumberInPage] = useState(1);
     const [lastNumberInPage,setLastNumberInPage] = useState(5)
     const [numbers,setNumbers] = useState([...Array(lastNumberInPage + 1).keys()].slice(1));
     const [selectedValue, setSelectedValue] = useState('');
     const [inputDisable, setInputDisable]  = useState(true);
     const [updateValue,setUpdatedValue] = useState('');
+    const [selectedId, setSelectedId] = useState(0);
+    const location = useLocation();
+    const data = location.state;
+    const navigate = useNavigate();
+    
     useEffect(() => {
+      if(!inputDisable)
+      {
+        afterSubmit();
+      }
+      
+    }, [records]);
+  function afterSubmit()
+  {   
+    if(data != null && records.length > 0)
+    {   
+        let ind = records.findIndex((rec)=>{return location.state?.id  == rec.id});
+        if(ind> -1)
+        {
+          records[ind].title = location?.state.title;
+          records[ind].price =  location?.state.price;
+          setRecords(records); 
+          setInputDisable(true);
+        }
+        
+    }
+  }
+   
+    useEffect(() => {
+      if (records.length === 0) {
+        console.log("iii")
         fetch('https://dummyjson.com/products?limit=5&skip=0&select=title,price')
         .then( res => res.json())
         .then( data => {
             setRecords(data.products)
-            getTotalRecord(data.total);
+            setInputDisable(false);
         })
+      }
       }, []);
     
 
@@ -78,12 +109,15 @@ export default function HelloWorld() {
   }
 
 
-  function handleRowDoubleClick(event) {
-    setSelectedValue(event.target.textContent);
+  function handleRowDoubleClick(title,selectedId) {
+    setSelectedValue(title);
+    setSelectedId(selectedId);
     if(updateValue == '')
     {
-        setUpdatedValue(event.target.textContent)
+        setUpdatedValue(title)
     }
+    navigate(`/edit/${selectedId}`);
+    
   }
 
   function onEditClick()
@@ -121,33 +155,40 @@ function onDeleteClick()
     <div>
     <table style={{border: '1px solid black'}}>
             <thead>
-                <tr>
-                    <th>Title</th>
-                </tr>
+            <tr>
+            <th>Title</th>
+            <th>Price</th>
+          </tr>
             </thead>
             <tbody>
             {records.map((list) =>(
-                <tr key= {list.id} id={list.id}>
+                <tr key= {list.id} id={toString(list.id)}>
                     <td style={{ border: '1px solid black',padding:'0.5rem',
                     
-                }} onClick={handleRowDoubleClick}>{list.title}</td>
-                   {/* <td>{list.category}</td>  */}
+                }} onClick={() =>{handleRowDoubleClick(list.title,list.id)}}>{list.title}</td>
+                   {/* {<td>{list.category}</td>}
+                {<td style={{ border: '1px solid black',padding:'0.5rem'}}>{list.description}</td>}
+                {<td style={{ border: '1px solid black',padding:'0.5rem'}}>{list.brand}</td>} */}
+                
+                {<td  key= {list.id} id={toString(list.id)} style={{ border: '1px solid black',padding:'0.5rem'}} 
+                 onClick={() =>{handleRowDoubleClick(list.title,list.id)}}
+                >{list.price}</td>}
                 </tr>
             ))}
             </tbody>
+           
     </table>
-    <span style={{fontWeight:'bold'}}>Title:
-     {!inputDisable ? <input type="text" defaultValue={selectedValue}
-     onChange={event=> setUpdatedValue(event.target.value)}
-     /> :
-     <label>{selectedValue}</label>}
-     </span>
-    <button style={{fontWeight:'bold'}} onClick={onEditClick}>Edit</button>
-    {!inputDisable ? <button style={{fontWeight:'bold'}} onClick={onUpdateClick}>Update</button>
-    : <button style={{fontWeight:'bold'}} onClick={onDeleteClick} >Delete</button>
-    }  
 
-    
+    {/* <ButtonEdit
+      inputDisable={inputDisable}
+      selectedValue={selectedValue}
+      setUpdatedValue ={setUpdatedValue}
+onEditClick={onEditClick}
+onUpdateClick={onUpdateClick}
+onDeleteClick={onDeleteClick}
+    ></ButtonEdit> */}
+              
+
     <nav>
         <ul>
 
